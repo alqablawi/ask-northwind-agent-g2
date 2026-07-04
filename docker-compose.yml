@@ -1,0 +1,60 @@
+name: ask-northwind-agent_g2
+
+services:
+  # Dedicated PostgreSQL service for this course project only.
+  postgres:
+    # Official lightweight PostgreSQL image; Northwind seed data will be added in M2-2.
+    image: postgres:17-alpine
+
+    # Fixed container name makes it easy for students to find in Docker Desktop.
+    container_name: ask_northwind_postgres_g2
+
+    # Restart the database automatically unless the student explicitly stops it.
+    restart: unless-stopped
+
+    # PostgreSQL initialization values come from .env, with safe classroom defaults.
+    environment:
+      # Creates the initial database on first container startup.
+      POSTGRES_DB: ${POSTGRES_DB:-northwind}
+
+      # Creates the initial database user on first container startup.
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+
+      # Required by the official PostgreSQL image; keep real secrets in .env.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+
+    # Map an isolated host port to the internal PostgreSQL port.
+    ports:
+      # Host 55433 avoids conflicts with local PostgreSQL 5432 and enara_ai-postgres 55432.
+      - "${POSTGRES_PORT:-55432}:5432"
+
+    # Persist database files even if the container is recreated.
+    volumes:
+      # Named volume keeps project data separate from other PostgreSQL containers.
+      - postgres_data:/var/lib/postgresql/data
+
+      # Mount initialization scripts so PostgreSQL runs them on first database creation.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+
+    # Let Docker report when PostgreSQL is ready to accept connections.
+    healthcheck:
+      # Escape variables with $$ so they are evaluated inside the container, not by Compose.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+
+      # Check readiness every 5 seconds.
+      interval: 5s
+
+      # Fail a single check if PostgreSQL does not respond within 5 seconds.
+      timeout: 5s
+
+      # Allow several startup attempts before Docker marks the service unhealthy.
+      retries: 10
+
+      # Give PostgreSQL a short startup grace period before health checks count as failures.
+      start_period: 10s
+
+volumes:
+  # Named volume declaration for persistent PostgreSQL data.
+  postgres_data:
+    # Explicit volume name makes the storage visible and recognizable in Docker Desktop.
+    name: ask_northwind_postgres_data

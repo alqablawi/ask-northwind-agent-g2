@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     app_env: str = "local"
     debug: bool = True
 
+    postgres_db: str = "northwind"
+    postgres_user: str = "postgres"
+    postgres_password: SecretStr = SecretStr("postgres")
+    postgres_host: str = "localhost"
+    postgres_port: int = 55432
+    database_url: str = "postgresql+psycopg://postgres:postgres@localhost:55432/northwind"
+
 
 
 @lru_cache
